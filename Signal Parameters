@@ -1,0 +1,177 @@
+import numpy
+from numpy import sqrt
+from prettytable import PrettyTable
+import math
+
+#Defines Subscript Format Function
+def get_sub(x):
+    normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=()"
+    sub_s = "ₐ₈CDₑբGₕᵢⱼₖₗₘₙₒₚQᵣₛₜᵤᵥwₓᵧZₐ♭꜀ᑯₑբ₉ₕᵢⱼₖₗₘₙₒₚ૧ᵣₛₜᵤᵥwₓᵧ₂₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎"
+    res = x.maketrans(''.join(normal), ''.join(sub_s))
+    return x.translate(res)
+
+while True:
+    #Defines and Creates Title Columns
+    columns = ["#", "Material", '\u03B5{}'.format(get_sub('r')), '\u03C3 (s/m)', '\u03BC{}'.format(get_sub('r'))]
+    myTable = PrettyTable()
+
+    #Creates Columns for Materials and properties.
+    myTable.add_column(columns[0], ["1","2","3","4","5","6","7","8","9","10","11","12"])
+    myTable.add_column(columns[1], ["Air", "Seawater", "Saturated Sand", "Cold Rolled Sand", "2-81 Permalloy", "Copper", "Graphite", "Diamond", "Silicon", "Glass", "Wood - Kiln Dried", "PTFE"])
+    myTable.add_column(columns[2], ["1", "80", "30", "1", "1", "1", "12.5", "7.5", "11.68", "65", "4", "2.1",])
+    myTable.add_column(columns[3], ["1E-9", "3", "1E-4", "1E7", "1E2", "5.96E7", "2E5", "1E-13", "1.56E-3", "1E-15", "1E-15", "1E-25"])
+    myTable.add_column(columns[4], ["1", "1", "1", "100", "1E6", "1", "1", "1", "1", "1", "1", "1"])
+    print(myTable)
+
+    #Table of Properties
+    materials = ["Air", "Sea Water" , "Saturated Sand", "Cold Rolled Steel", "2-81 Permalloy", "Copper", "Graphite", "Diamond", "Silicon", "Glass", "Wood - Kiln Dried", "PTFE"]
+    relativePermi = [1.0, 80.0, 30.0, 1.0, 1.0, 1.0, 12.5, 7.5, 11.68, 65.0, 4.0, 2.1]
+    conductivity = [1E-9,3.0, 1E-4, 1E7, 1E2, 5.96E7, 2E5 , 1E-13, 1.56E-3, 1E-15, 1E-15, 1E-25]
+    relativePerma = [1.0, 1.0, 1.0, 100.0, 1.0E6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    micro_o = (math.pi*4E-7)
+    epsilon_o = (1E-9/(36*math.pi))
+
+    #Prompt test for a specific material and validate input
+    while True:
+        mat_input = (int(input("Enter the corresponding # for a material to test: "))-1)
+        if mat_input in range(0,12):
+            lookup = materials[mat_input]
+            print("You have chosen:", lookup)
+            break
+        else:
+            print()
+            print("Please enter a valid material # between 1-12.")
+
+    #Prompt and test validity of frequency input
+    while True:
+        freq_input = (float(input("Enter a frequency (Hz) : ")))
+        if freq_input > 0.00:
+            break
+        else:
+            print()
+            print("Please enter a valid input. Frequency must be a positive number.")
+
+    #Calculate omega
+    radfreq = (2 * (math.pi) * freq_input)
+
+    #Input turned into Variables
+    conductor_determinator = (conductivity[mat_input])/(radfreq*relativePermi[mat_input]*epsilon_o)
+    permavariable = relativePerma[mat_input]*micro_o
+    permivariable = relativePermi[mat_input]*epsilon_o
+    permi_input = relativePermi[mat_input]
+    perma_input = relativePerma[mat_input]
+    conduct_input = conductivity[mat_input]
+    print()
+
+    #Calculates Alpha
+    def alphacalc():
+        decimalone = numpy.nextafter(1,numpy.inf)
+        cd_power2 = conductor_determinator ** 2.0
+        ue_variable = (permavariable*permivariable) / (2.0)
+        sqrt_cdpowerplusone = sqrt(decimalone + cd_power2)
+        insidesqrtminus1 = sqrt_cdpowerplusone - decimalone
+        uevariablebysqrtone = insidesqrtminus1 * ue_variable
+        sqrtuevariable = sqrt(uevariablebysqrtone)
+        global finalvariablea
+        finalvariablea = sqrtuevariable * radfreq
+        return finalvariablea
+
+    #Calculates Beta
+    def betacalc():
+        decimalone = numpy.nextafter(1, numpy.inf)
+        cd_power2 = conductor_determinator ** 2.0
+        ue_variable = (permavariable * permivariable) / (2.0)
+        insidesqrt = sqrt(decimalone + cd_power2)
+        insidesqrtplus1 = insidesqrt + decimalone
+        uevariablebysqrtone = insidesqrtplus1 * ue_variable
+        sqrtuevariable = sqrt(uevariablebysqrtone)
+        global finalvariableb
+        finalvariableb = sqrtuevariable * radfreq
+        return finalvariableb
+
+    #Performs the test
+    if(conduct_input == 0):
+        print(lookup, "is a lossless medium.")
+        loss_alpha = 0
+        loss_beta = radfreq * sqrt(permavariable * permivariable)
+        loss_imp = sqrt(permavariable / permivariable)
+        lossrad_imp = numpy.angle(loss_imp)
+        lossdegrees_imp = numpy.rad2deg(lossrad_imp)
+        wavelength = (2 * math.pi) / (loss_beta)
+        prop_vel = radfreq / loss_beta
+        loss_skindep = 1 / loss_beta
+        print("\u03B1 =", loss_alpha, "(Np/m)")
+        print("\u03B2 =", loss_beta, "(rad/m)")
+        print("\u03B7{} =".format(get_sub('c')), (loss_imp), "\u2220", (lossdegrees_imp), "\u00B0", "(\u03A9)")
+        print("\u03BB =", wavelength, "(m)")
+        print("\u03BC{} =".format(get_sub('p')), prop_vel, "(m/s)")
+        print("\u03B4{} =".format(get_sub('s')), loss_skindep, "(m)")
+
+    elif(conductor_determinator > 100):
+        print(lookup,"is a good counductor.")
+        good_alpha = sqrt(math.pi*freq_input*permavariable*conduct_input)
+        good_beta = sqrt(math.pi*freq_input*permavariable*conduct_input)
+        good_imp = (1+1j)*((good_alpha)/conduct_input)
+        goodradians_imp = numpy.angle(good_imp)
+        gooddegrees_imp = numpy.rad2deg(goodradians_imp)
+        wavelength = (2 * math.pi) / (good_beta)
+        prop_vel = radfreq / good_beta
+        good_skindep = 1/good_alpha
+        print("\u03B1 =", good_alpha, "(Np/m)")
+        print("\u03B2 =", good_beta, "(rad/m)")
+        print("\u03B7{} =".format(get_sub('c')), abs(good_imp), "\u2220", (gooddegrees_imp), "\u00B0", "(\u03A9)")
+        print("\u03BB =", wavelength, "(m)")
+        print("\u03BC{} =".format(get_sub('p')), prop_vel, "(m/s)")
+        print("\u03B4{} =".format(get_sub('s')), good_skindep, "(m)")
+
+    elif(conductor_determinator < 0.01):
+        print(lookup, "is a low-less medium.")
+        low_alpha = (conductivity[mat_input]/2)*(sqrt((relativePerma[mat_input]*micro_o)/(relativePermi[mat_input]*epsilon_o)))
+        low_beta = radfreq*(sqrt(permivariable*permavariable))
+        low_imp = sqrt((permavariable)/(permivariable))
+        lowradians_imp = numpy.angle(low_imp)
+        lowdegrees_imp = numpy.rad2deg(lowradians_imp)
+        wavelength = (2 * math.pi) / (low_beta)
+        prop_vel = radfreq / low_beta
+        low_skindep = 1/low_alpha
+        print("\u03B1 =", low_alpha, "(Np/m)")
+        print("\u03B2 =", low_beta, "(rad/m)")
+        print("\u03B7{} =".format(get_sub('c')), abs(low_imp), "\u2220", lowdegrees_imp, "\u00B0", "(\u03A9)")
+        print("\u03BB =", wavelength, "(m)")
+        print("\u03BC{} =".format(get_sub('p')), prop_vel, "(m/s)")
+        print("\u03B4{} =".format(get_sub('s')), low_skindep, "(m)")
+
+    else:
+        print(lookup,"is a general material.")
+        alphacalc()
+        betacalc()
+        a = complex(1-1j)
+        cp1 = numpy.sqrt(permavariable/permivariable)
+        cp2 = numpy.sqrt(a*(conductor_determinator))
+        cp3 = cp1*cp2
+        genradians_imp = numpy.angle(cp3)
+        gendegrees_imp = numpy.rad2deg(genradians_imp)
+        wavelength = (2 * math.pi) / (finalvariableb)
+        prop_vel = radfreq / finalvariableb
+        gen_skindep = 1/finalvariablea
+        print("\u03B1 =", finalvariablea, "(Np/m)")
+        print("\u03B2 =", finalvariableb, "(rad/m)")
+        print("\u03B7{} =".format(get_sub('c')), abs(cp3), "\u2220", gendegrees_imp, "\u00B0", "(\u03A9)")
+        print("\u03BB =", wavelength, "(m)")
+        print("\u03BC{} =".format(get_sub('p')), prop_vel, "(m/s)")
+        print("\u03B4{} =".format(get_sub('s')), gen_skindep, "(m)")
+
+    #Prompt to re-run Program
+    while True:
+        print()
+        endinginput = str(input("Do you want to test another material? Please enter 'Yes' or 'No': "))
+        if endinginput == 'Yes':
+            break
+        elif endinginput == 'yes':
+            break
+        elif endinginput == 'no':
+            exit()
+        elif endinginput == 'No':
+            exit()
+        elif "yes" or "no" not in endinginput:
+            print("Invalid Input. Please enter 'Yes' or 'No': ")
